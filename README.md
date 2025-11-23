@@ -144,6 +144,11 @@ passlib==1.7.4
 pyjwt==2.8.0
 ```
 
+## Exponer con ngrok 
+```bash 
+ngrok http 8080
+```
+
 ---
 
 ## 📬 Contacto
