@@ -23,7 +23,7 @@ from app.service.crud.school_service import SchoolService
 from app.service.crud.unit_unal_service import UnitUnalService
 from app.utils.app_logger import AppLogger
 
-logger = AppLogger(__file__)
+logger = AppLogger(__file__, "fill_associate_email_sender.log")
 
 
 # TODO: Por el momento solo se rellena hasta facultades, porque no hay
@@ -34,14 +34,16 @@ def fill_associate_email_sender(session: Session):
         HeadquartersService.get_all(session)
     )
     schools: list[School] = SchoolService.get_all(session)
-    units: list[UnitUnal] = UnitUnalService.get_all(session)
+
+    # Todo : this limit should be removed when we have more units
+    units: list[UnitUnal] = UnitUnalService.get_all(session, limit=1000)
 
     logger.info("Email senders encontrados: ")
     for sender in email_senders:
         logger.info(f"Sender: {sender.email}, Org Type: {sender.org_type}")
 
     senders_global, senders_headquarters, senders_schools = (
-        process_email_sender(email_senders)
+        get_email_senders(email_senders)
     )
 
     logger.info("Senders globales encontrados:")
@@ -61,7 +63,6 @@ def fill_associate_email_sender(session: Session):
     school_senders: list[EmailSenderSchool] = []
     headquarters_senders: list[EmailSenderHeadquarters] = []
 
-    print(headquarters)
     temp_units_senders, temp_school_senders, temp_headquarters_senders = (
         fill_global_email_senders(
             senders_global,
@@ -101,7 +102,7 @@ def fill_associate_email_sender(session: Session):
 
     for hqs in headquarters_senders:
         logger.info(
-            f"Headquarters Sender to insert: Sender ID: {hqs.sender_id}, "
+            f"Headquarters Sender to insert: {hqs.sender_id}, "
             f"Cod Headquarters: {hqs.cod_headquarters}"
         )
 
@@ -129,7 +130,7 @@ def fill_associate_email_sender(session: Session):
             responseEmailHeadquartersBulk)
 
 
-def process_email_sender(senders: list[EmailSender]):
+def get_email_senders(senders: list[EmailSender]):
     senders_global = []
     senders_headquarters = {}
     senders_schools = []
@@ -159,12 +160,14 @@ def fill_global_email_senders(
     schools: list[School],
     headquarters: list[Headquarters]
 ):
+    logger.info("Llenando senders globales")
     unit_senders: list[EmailSenderUnit] = []
     school_senders: list[EmailSenderSchool] = []
     headquarters_senders: list[EmailSenderHeadquarters] = []
-
     for sender in senders_global:
+        logger.info(f"Llenando sender global: {sender.email}")
         for hq in headquarters:
+            logger.info(f"Asociando {sender.email} a {hq.name}")
             hq_sender = EmailSenderHeadquarters(
                 sender_id=sender.email,
                 cod_headquarters=hq.cod_headquarters,
