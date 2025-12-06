@@ -72,11 +72,11 @@ def fill_associate_email_sender(session: Session, cod_period: str):
         )
     )
 
-    return (
-        response_email_headquarters,
-        response_email_school,
-        response_email_unit
-    )
+    return {
+        "response_email_headquarters": response_email_headquarters,
+        "response_email_school": response_email_school,
+        "response_email_unit": response_email_unit
+    }
 
 
 def _associated_email_senders(
