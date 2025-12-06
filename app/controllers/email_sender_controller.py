@@ -50,9 +50,10 @@ def create_email_sender(
     status_code=status.HTTP_201_CREATED
 )
 def create_email_senders(
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    cod_period: str = ""
 ):
-    return fill_associate_email_sender(session)
+    return fill_associate_email_sender(session, cod_period)
 
 
 @router.patch("/{id}", response_model=EmailSender)

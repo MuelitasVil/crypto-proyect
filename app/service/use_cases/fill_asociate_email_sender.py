@@ -6,7 +6,6 @@ from app.domain.models.email_sender_school import EmailSenderSchool
 from app.domain.models.email_sender_unit import EmailSenderUnit
 from app.domain.models.headquarters import Headquarters
 from app.domain.models.school import School
-from app.domain.models.unit_unal import UnitUnal
 
 from app.domain.enums.email_sender.email_sender import OrgType, Role
 
@@ -20,7 +19,9 @@ from app.service.crud.email_sender_headquarters_service import (
 )
 from app.service.crud.headquarters_service import HeadquartersService
 from app.service.crud.school_service import SchoolService
-from app.service.crud.unit_unal_service import UnitUnalService
+from app.service.use_cases.get_organization_schema import (
+    get_organization_schema
+)
 from app.utils.app_logger import AppLogger
 
 logger = AppLogger(__file__, "fill_associate_email_sender.log")
@@ -28,212 +29,347 @@ logger = AppLogger(__file__, "fill_associate_email_sender.log")
 
 # TODO: Por el momento solo se rellena hasta facultades, porque no hay
 # emails para unidades academicas en la base de datos.
-def fill_associate_email_sender(session: Session):
-    email_senders: list[EmailSender] = EmailSenderService.get_all(session)
-    headquarters: list[Headquarters] = (
-        HeadquartersService.get_all(session)
+def fill_associate_email_sender(session: Session, cod_period: str):
+    senders_global: list[EmailSender]
+    senders_headquarters: dict[str, dict[str, list[EmailSender]]]
+    organization_schema: dict[str, dict[str, list[str]]] = {}
+
+    senders_global, senders_headquarters = (
+        _get_email_senders(session)
     )
-    schools: list[School] = SchoolService.get_all(session)
+    _log_email_senders(senders_global, senders_headquarters)
 
-    # Todo : this limit should be removed when we have more units
-    units: list[UnitUnal] = UnitUnalService.get_all(session, limit=2000)
+    organization_schema = get_organization_schema(session, cod_period)
+    _log_organization(organization_schema)
 
-    logger.info(f"Total unidades academicas: {len(units)}")
-    logger.info(f"Total sedes: {len(headquarters)}")
-    logger.info(f"Total escuelas: {len(schools)}")
-
-    logger.info("Email senders encontrados: ")
-    for sender in email_senders:
-        logger.info(f"Sender: {sender.email}, Org Type: {sender.org_type}")
-
-    senders_global, senders_headquarters, senders_schools = (
-        get_email_senders(email_senders)
-    )
-
-    logger.info("Senders globales encontrados:")
-    for sender in senders_global:
-        logger.info(f"Sender: {sender.email}")
-
-    logger.info("Senders de sedes encontrados:")
-    for sede, senders in senders_headquarters.items():
-        for sender in senders:
-            logger.info(f"Sede: {sede}, Sender: {sender.email}")
-
-    logger.info("Senders de escuelas encontrados:")
-    for sender in senders_schools:
-        logger.info(f"Sender: {sender.email}")
-
-    units_senders: list[EmailSenderUnit] = []
-    school_senders: list[EmailSenderSchool] = []
-    headquarters_senders: list[EmailSenderHeadquarters] = []
-
-    temp_units_senders, temp_school_senders, temp_headquarters_senders = (
-        fill_global_email_senders(
+    emailSenderHeadquarters, emailSenderSchool, emailSenderUnit = (
+        _associated_email_senders(
             senders_global,
-            units,
-            schools,
-            headquarters
-        )
-    )
-
-    units_senders.extend(temp_units_senders)
-    school_senders.extend(temp_school_senders)
-    headquarters_senders.extend(temp_headquarters_senders)
-
-    temp_headquarters_senders = (
-        fill_headquarters_email_senders(
             senders_headquarters,
-            headquarters
+            organization_schema,
+            session
         )
     )
 
-    headquarters_senders.extend(temp_headquarters_senders)
-
-    temp_school_senders = fill_school_email_senders(
-        senders_schools,
-        schools
-    )
-
-    school_senders.extend(temp_school_senders)
-
-    responseEmailUnitbulk = EmailSenderUnitService.bulk_insert_ignore(
-        units_senders, session
-    )
-
-    responseEmailSchoolBulk = EmailSenderSchoolService.bulk_insert_ignore(
-        school_senders, session
-    )
-
-    for hqs in headquarters_senders:
-        logger.info(
-            f"Headquarters Sender to insert: {hqs.sender_id}, "
-            f"Cod Headquarters: {hqs.cod_headquarters}"
-        )
-
-    responseEmailHeadquartersBulk = (
+    response_email_headquarters = (
         EmailSenderHeadquartersService.bulk_insert_ignore(
-            headquarters_senders, session
+            emailSenderHeadquarters,
+            session
         )
     )
 
-    logger.info(
-        f"EmailSenderUnit bulk insert response: {responseEmailUnitbulk}"
+    response_email_school = (
+        EmailSenderSchoolService.bulk_insert_ignore(
+            emailSenderSchool,
+            session
+        )
     )
 
-    logger.info(
-        f"EmailSenderSchool bulk insert response: {responseEmailSchoolBulk}"
+    response_email_unit = (
+        EmailSenderUnitService.bulk_insert_ignore(
+            emailSenderUnit,
+            session
+        )
     )
 
-    logger.info(
-        f"EmailSenderHeadquarters bulk insert response: "
-        f"{responseEmailHeadquartersBulk}"
+    return (
+        response_email_headquarters,
+        response_email_school,
+        response_email_unit
     )
 
-    return (responseEmailUnitbulk,
-            responseEmailSchoolBulk,
-            responseEmailHeadquartersBulk)
 
-
-def get_email_senders(senders: list[EmailSender]):
-    senders_global = []
-    senders_headquarters = {}
-    senders_schools = []
-    for sender in senders:
-        if sender.org_type == OrgType.GLOBAL.value:
-            senders_global.append(sender)
-
-        if sender.org_type == OrgType.HEADQUARTERS.value:
-            if sender.sede_code not in senders_headquarters:
-                senders_headquarters[sender.sede_code] = []
-
-            list_sender_headquarters: list = senders_headquarters[
-                sender.sede_code
-            ]
-
-            list_sender_headquarters.append(sender)
-
-        if sender.org_type == OrgType.SCHOOL.value:
-            senders_schools.append(sender)
-
-    return senders_global, senders_headquarters, senders_schools
-
-
-def fill_global_email_senders(
+def _associated_email_senders(
     senders_global: list[EmailSender],
-    units: list[UnitUnal],
-    schools: list[School],
-    headquarters: list[Headquarters]
+    senders_headquarters: dict[str, dict[str, list[EmailSender]]],
+    organization_schema: dict[str, dict[str, list[str]]] = {},
+    session: Session = None
 ):
-    logger.info("Llenando senders globales")
-    unit_senders: list[EmailSenderUnit] = []
-    school_senders: list[EmailSenderSchool] = []
-    headquarters_senders: list[EmailSenderHeadquarters] = []
-    for sender in senders_global:
-        logger.info(f"Llenando sender global: {sender.email}")
-        for hq in headquarters:
-            logger.info(f"Asociando {sender.email} a {hq.name}")
-            hq_sender = EmailSenderHeadquarters(
-                sender_id=sender.email,
-                cod_headquarters=hq.cod_headquarters,
-                role=Role.OWNER.value,
-            )
-            headquarters_senders.append(hq_sender)
+    emailSenderHeadquarters: list[EmailSenderHeadquarters] = []
+    emailSenderSchool: list[EmailSenderSchool] = []
+    emailSenderUnit: list[EmailSenderUnit] = []
 
-        for school in schools:
-            school_sender = EmailSenderSchool(
-                sender_id=sender.email,
-                cod_school=school.cod_school,
-                role=Role.OWNER.value,
-            )
-            school_senders.append(school_sender)
-
-        for unit in units:
-            unit_sender = EmailSenderUnit(
-                sender_id=sender.email,
-                cod_unit=unit.cod_unit,
-            )
-            unit_senders.append(unit_sender)
-
-    return unit_senders, school_senders, headquarters_senders
-
-
-def fill_headquarters_email_senders(
-    senders_headquarters: dict,
-    headquarters: list[Headquarters]
-):
-    headquarters_senders: list[EmailSenderHeadquarters] = []
-    for hq in headquarters:
-        if hq.name in senders_headquarters:
-            list_senders = senders_headquarters[hq.name]
-            for sender in list_senders:
-                hq_sender = EmailSenderHeadquarters(
-                    sender_id=sender.email,
-                    cod_headquarters=hq.cod_headquarters,
-                    role=Role.OWNER.value,
-                )
-                headquarters_senders.append(hq_sender)
-
-    return headquarters_senders
-
-
-def fill_school_email_senders(
-    senders_schools: list,
-    schools: list[School]
-):
-    logger.info("Llenando senders de escuelas")
-    school_senders: list[EmailSenderSchool] = []
-    for school in schools:
-        # TODO: Mejorar esta logica de asociacion
-        if not ("bog" in school.cod_school.lower()):
+    for sede, schools in organization_schema.items():
+        sede_info: Headquarters = HeadquartersService.get_by_id(sede, session)
+        if not sede_info:
             continue
 
-        for sender in senders_schools:
-            if sender.org_code in school.name:
-                school_sender = EmailSenderSchool(
-                    sender_id=sender.email,
-                    cod_school=school.cod_school,
-                    role=Role.OWNER.value,
-                )
-                school_senders.append(school_sender)
+        sede_name = sede_info.name
+        email_senders_sede: list[EmailSender] = (
+            _get_email_senders_by_sede(
+                sede_name,
+                senders_headquarters
+            )
+        )
 
-    return school_senders
+        temp_email_senders_headquarters: list[EmailSenderHeadquarters] = (
+            _get_email_sender_headquarters(
+                sede_info.cod_headquarters,
+                email_senders_sede,
+                senders_global
+            )
+        )
+        emailSenderHeadquarters.extend(temp_email_senders_headquarters)
+
+        for school, units in schools.items():
+            school_info: School = SchoolService.get_by_id(school, session)
+            if not school_info:
+                continue
+
+            school_name = school_info.name
+            email_senders_school: list[EmailSender] = (
+                _get_email_senders_by_school(
+                    sede_name,
+                    school_name,
+                    senders_headquarters
+                )
+            )
+
+            temp_email_senders_schools: list[EmailSenderSchool] = []
+            temp_email_senders_schools = (
+                _get_email_sender_school(
+                    school_info.cod_school,
+                    email_senders_sede,
+                    senders_global,
+                    email_senders_school
+                )
+            )
+            emailSenderSchool.extend(temp_email_senders_schools)
+
+            # todo: dont exist email senders for units in db
+            temp_unit_senders_school: list[EmailSenderUnit] = []
+            temp_unit_senders_school = (
+                _get_email_sender_units(
+                    units,
+                    email_senders_sede,
+                    senders_global,
+                    email_senders_school
+                )
+            )
+            emailSenderUnit.extend(temp_unit_senders_school)
+
+    return (
+        emailSenderHeadquarters,
+        emailSenderSchool,
+        emailSenderUnit
+    )
+
+
+def _get_email_sender_headquarters(
+        cod_headquarters: str,
+        senders_headquarters: list[EmailSender],
+        senders_global: list[EmailSender]
+) -> list[EmailSenderHeadquarters]:
+    email_senders_headquarters: list[EmailSenderHeadquarters] = []
+    sender: EmailSender
+    hq_sender: EmailSenderHeadquarters
+
+    all_headquarters_senders: list[EmailSender] = (
+        senders_headquarters + senders_global
+    )
+
+    for sender in all_headquarters_senders:
+        hq_sender = EmailSenderHeadquarters(
+            sender_id=sender.email,
+            cod_headquarters=cod_headquarters,
+            role=Role.OWNER.value
+        )
+        email_senders_headquarters.append(hq_sender)
+
+    return email_senders_headquarters
+
+
+def _get_email_sender_school(
+        cod_school: str,
+        senders_headquarters: list[EmailSender],
+        senders_global: list[EmailSender],
+        senders_school: list[EmailSender]
+) -> list[EmailSenderSchool]:
+    email_senders_schools: list[EmailSenderSchool] = []
+    sender: EmailSender
+    sc_sender: EmailSenderSchool
+
+    all_school_senders: list[EmailSender] = (
+        senders_headquarters + senders_school + senders_global)
+
+    for sender in all_school_senders:
+        sc_sender = EmailSenderSchool(
+            sender_id=sender.email,
+            cod_school=cod_school,
+            role=Role.OWNER.value
+        )
+        email_senders_schools.append(sc_sender)
+
+    return email_senders_schools
+
+
+def _get_email_sender_units(
+        units: list[str],
+        senders_headquarters: list[EmailSender],
+        senders_global: list[EmailSender],
+        sendol_school: str
+) -> list[EmailSenderUnit]:
+    email_senders_units: list[EmailSenderUnit] = []
+    sender: EmailSender
+    sc_sender: EmailSenderUnit
+
+    all_school_units: list[EmailSender] = (
+        senders_headquarters + sendol_school + senders_global)
+
+    for cod_unit in units:
+        for sender in all_school_units:
+            sc_sender = EmailSenderUnit(
+                sender_id=sender.email,
+                cod_school=cod_unit,
+                role=Role.OWNER.value
+            )
+            email_senders_units.append(sc_sender)
+
+    return email_senders_units
+
+
+def _get_email_senders_by_school(
+        sede_name: str,
+        school_name: str,
+        senders_headquarters: dict[str, dict[str, list[EmailSender]]]
+) -> list[EmailSender]:
+    if sede_name in senders_headquarters:
+        sede = senders_headquarters[sede_name]
+        if OrgType.SCHOOL.value in sede:
+            schools = sede[OrgType.SCHOOL.value]
+            if school_name in schools:
+                return schools[school_name]
+
+    return []
+
+
+def _get_email_senders_by_sede(
+        sede_name: str,
+        senders_headquarters: dict[str, dict[str, list[EmailSender]]]
+) -> list[EmailSender]:
+
+    if sede_name in senders_headquarters:
+        return senders_headquarters[sede_name][OrgType.HEADQUARTERS.value]
+
+    return []
+
+
+def _get_email_senders(
+        session: Session
+) -> list[EmailSender]:
+
+    email_senders: list[EmailSender] = EmailSenderService.get_all(session)
+    senders_global: list[EmailSender] = []
+
+    # sede : {org_type: [EmailSender, ...], ...} sede
+    # sede : {org_type: {org_code: [EmailSender, ...], ...}, ...} school
+    senders_headquarters: dict[str, dict[str, list[EmailSender]]] = {}
+
+    return _get_organized_email_senders(
+        email_senders,
+        senders_global,
+        senders_headquarters
+    )
+
+
+def _get_organized_email_senders(
+        senders: list[EmailSender],
+        senders_global: list[EmailSender],
+        senders_headquarters: dict[str, dict[str, list[EmailSender]]]
+        ):
+    senders_global = []
+    senders_headquarters = {}
+
+    for sender in senders:
+        _obtain_global_email_sender(
+            sender,
+            senders_global
+        )
+
+        _obtain_headquarters_email_sender(
+            sender,
+            senders_headquarters
+        )
+
+    return senders_global, senders_headquarters
+
+
+def _obtain_global_email_sender(
+        sender: EmailSender,
+        senders_global: list[EmailSender]
+        ):
+
+    if sender.org_type == OrgType.GLOBAL.value:
+        senders_global.append(sender)
+
+
+def _obtain_headquarters_email_sender(
+        sender: EmailSender,
+        senders_headquarters: dict[str, dict[str, list[EmailSender]]]
+        ):
+
+    origin_type = sender.org_type
+    if origin_type == OrgType.HEADQUARTERS.value:
+
+        sede_name = sender.sede_code
+        if sede_name not in senders_headquarters:
+            senders_headquarters[sede_name] = {}
+
+        sede = senders_headquarters[sede_name]
+
+        if origin_type not in sede:
+            sede[origin_type] = []
+
+        sede[origin_type].append(sender)
+
+    if origin_type == OrgType.SCHOOL.value:
+        sede_name = sender.sede_code
+        if sede_name not in senders_headquarters:
+            senders_headquarters[sede_name] = {}
+
+        sede = senders_headquarters[sede_name]
+
+        if origin_type not in sede:
+            sede[origin_type] = {}
+
+        facultades = sede[origin_type]
+        school_code = sender.org_code
+        if school_code not in facultades:
+            facultades[school_code] = []
+
+        facultad = facultades[school_code]
+        facultad.append(sender)
+
+
+def _log_organization(organization_schema: dict[str, dict[str, list[str]]]):
+    for sede, schools in organization_schema.items():
+        logger.info(f"Sede: {sede}")
+        for school, units in schools.items():
+            logger.info(f"  school: {school}")
+            for org_code in units:
+                logger.info(f"    unit Code: {org_code}")
+
+
+def _log_email_senders(
+        senders_global: list[EmailSender],
+        senders_headquarters: dict[str, dict[str, list[EmailSender]]]
+        ):
+    logger.info("Global Email Senders:")
+    for sender in senders_global:
+        logger.info(f"  {sender}")
+
+    logger.info("Headquarters Email Senders:")
+    for sede, org_types in senders_headquarters.items():
+        logger.info(f"Sede: {sede}")
+
+        for org_type, senders in org_types.items():
+            logger.info(f"Org Type: {org_type}")
+            if org_type == OrgType.SCHOOL.value:
+                for org_code, school_senders in senders.items():
+                    logger.info(f"  Org Code: {org_code}")
+                    for sender in school_senders:
+                        logger.info(f"    {sender}")
+
+            if org_type == OrgType.HEADQUARTERS.value:
+                for sender in senders:
+                    logger.info(f"  Sender: {sender}")
