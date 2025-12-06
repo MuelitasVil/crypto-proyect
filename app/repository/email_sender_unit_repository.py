@@ -35,7 +35,7 @@ class EmailSenderUnitRepository:
             self.session.commit()
             return True
         return False
-    
+
     def bulk_insert_ignore(
         self, unit_emails: List[EmailSenderUnit]
     ):

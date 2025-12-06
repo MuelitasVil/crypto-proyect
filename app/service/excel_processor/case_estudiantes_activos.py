@@ -7,7 +7,7 @@ from sqlmodel import Session
 from app.domain.dtos.school_headquarters_associate.school_headquarters_associate_input import (  # noqa: E501 ignora error flake8
     SchoolHeadquartersAssociateInput,
 )
-from app.domain.dtos.unit_school_associate.unit_school_associate_input import ( 
+from app.domain.dtos.unit_school_associate.unit_school_associate_input import (
     UnitSchoolAssociateInput,
 )
 
@@ -382,7 +382,7 @@ def get_school_from_row(row: Tuple[Cell, ...]) -> Tuple[SchoolInput, bool]:
         sede == SedeEnum.SEDE_ORINOQUÍA._name or
         sede == SedeEnum.SEDE_TUMACO._name or
         sede == SedeEnum.SEDE_DE_LA_PAZ._name
-    ):  
+    ):
         isSpecialHeadquarters = True
         cod_school = f"estf{tipoEstudiante}{prefix_sede}"
     else:
@@ -486,7 +486,7 @@ def organize_rows_by_sede(
     """
     Organiza las filas del archivo Excel según la sede,
     validando que la sede sea válida.
-    
+
     {
     1: [
         (2, ('SEDE BOGOTÁ', 'ejemplo@bogota.com', 'Juan Pérez')),

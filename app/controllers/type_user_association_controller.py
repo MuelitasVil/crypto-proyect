@@ -26,7 +26,7 @@ def list_associations(
     return TypeUserAssociationService.get_all(
         session, start=start, limit=limit
     )
-        
+
 
 @router.get("/{email_unal}/{type_user_id}/{cod_period}",
             response_model=TypeUserAssociation)

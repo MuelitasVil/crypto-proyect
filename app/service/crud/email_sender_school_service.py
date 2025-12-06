@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from app.repository.email_sender_school_repository import (
     EmailSenderSchoolRepository
-) 
+)
 
 from app.domain.models.email_sender_school import EmailSenderSchool
 

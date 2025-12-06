@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from app.repository.email_sender_headquarters_repository import ( 
+from app.repository.email_sender_headquarters_repository import (
     EmailSenderHeadquartersRepository
 )
 from app.domain.models.email_sender_headquarters import EmailSenderHeadquarters

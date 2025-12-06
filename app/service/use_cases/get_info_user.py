@@ -59,7 +59,7 @@ def get_info_user(
                 "schools": {}
             }
 
-        headquarter = temp_dict[period][headquarters_name] 
+        headquarter = temp_dict[period][headquarters_name]
         school_name = row['school_name']
         if school_name not in headquarter["schools"]:
             school_code = row['cod_school']
