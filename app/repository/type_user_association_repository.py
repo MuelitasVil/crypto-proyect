@@ -44,7 +44,7 @@ class TypeUserAssociationRepository:
             self.session.commit()
             return True
         return False
-    
+
     def bulk_insert_ignore(
         self, unitUnal: List[TypeUserAssociation]
     ):
