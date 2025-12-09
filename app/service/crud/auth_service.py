@@ -42,11 +42,13 @@ class AuthService:
         )
 
         ldap_response = ldap_admin.create_user(ldap_user)
+        print("ldap_response:")
+        print(ldap_response)
         if not ldap_response['respuesta']:
-            repo.delete_user(created_user.id)
+            repo.delete_user(created_user.email)
             return None
 
-        return created_user
+        return user
 
     @staticmethod
     def login(

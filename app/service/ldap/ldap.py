@@ -12,7 +12,7 @@ class User:
 
 
 class LdapAdministrator:
-    ldap_server = Server('host.docker.internal', port=389, get_info=ALL)
+    ldap_server = Server('localhost', port=389, get_info=ALL)
     ldap_user = 'cn=admin,dc=dned,dc=unal,dc=edu,dc=co'
     ldap_password = 'admin'
 

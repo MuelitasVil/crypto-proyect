@@ -21,3 +21,9 @@ class AuthRepository:
 
     def token_exists(self, jwt_token: str) -> bool:
         return self.session.get(Token, jwt_token) is not None
+
+    def delete_user(self, user_id: int):
+        user = self.session.get(SystemUser, user_id)
+        if user:
+            self.session.delete(user)
+            self.session.commit()
