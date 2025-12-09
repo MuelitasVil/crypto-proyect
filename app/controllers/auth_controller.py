@@ -1,7 +1,7 @@
 from app.domain.dtos.auth.register_input import RegisterInput
 from app.domain.dtos.auth.login_input import LoginInput
 from app.service.crud.auth_service import AuthService
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.configuration.database import get_session
 from app.utils.rate_limiter import rate_limit
@@ -16,9 +16,11 @@ def register(data: RegisterInput, session: Session = Depends(get_session)):
 
 
 @router.post("/login")
-@rate_limit(requests_limit=5, time_window=60)
-def login(request: Request, data: LoginInput,
-          session: Session = Depends(get_session)):
+def login(
+    data: LoginInput,
+    session: Session = Depends(get_session),
+    _: None = Depends(rate_limit(max_requests=5, window_seconds=60))
+):
     token = AuthService.login(data.email, data.password, session)
     if not token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
