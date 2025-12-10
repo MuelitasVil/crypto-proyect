@@ -50,7 +50,7 @@ class LdapAdministrator:
 
     # Creacion de usuario
 
-    def create_user(self, user: user):
+    def create_user(self, user: User):
         conn = self.get_conection_admin()
 
         if not conn:
