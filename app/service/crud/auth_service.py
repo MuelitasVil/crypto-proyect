@@ -7,7 +7,7 @@ from passlib.context import CryptContext
 from app.domain.models.system_user import SystemUser
 from app.domain.models.jwt_token import Token
 from app.repository.auth_repository import AuthRepository
-from app.service.ldap.ldap import ldapAdministrator
+from app.service.ldap.ldap import LdapAdministrator, User
 
 SECRET_KEY = "YOUR_SECRET_KEY"
 ALGORITHM = "HS256"
@@ -32,8 +32,8 @@ class AuthService:
         )
         created_user = repo.create_user(user)
 
-        ldap_admin = ldapAdministrator()
-        ldap_user = user(
+        ldap_admin = LdapAdministrator()
+        ldap_user = User(
             username=email,
             password=password,
             name="Nombre",
@@ -53,7 +53,7 @@ class AuthService:
         email: str, password: str, session: Session, use_ldap=True
     ) -> str:
         if use_ldap:
-            ldap_admin = ldapAdministrator()
+            ldap_admin = LdapAdministrator()
             ldap_response = ldap_admin.check_user_credentials(email, password)
             if not ldap_response['respuesta']:
                 return None

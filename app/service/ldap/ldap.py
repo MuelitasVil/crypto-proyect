@@ -2,7 +2,7 @@ from ldap3 import Server, Connection, SUBTREE, ALL
 from hashlib import sha256
 
 
-class user:
+class User:
     def __init__(self, username, password, name, lastname, email):
         self.username = username
         self.password = password
@@ -11,7 +11,7 @@ class user:
         self.email = email
 
 
-class ldapAdministrator:
+class LdapAdministrator:
     ldap_server = Server('host.docker.internal', port=389, get_info=ALL)
     ldap_user = 'cn=admin,dc=dned,dc=unal,dc=edu,dc=co'
     ldap_password = 'admin'
