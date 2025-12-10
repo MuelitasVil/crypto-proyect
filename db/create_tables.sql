@@ -195,3 +195,19 @@ CREATE TABLE IF NOT EXISTS token (
     CONSTRAINT fk_token_user FOREIGN KEY (email) REFERENCES system_user(email) ON DELETE CASCADE ON UPDATE CASCADE,
     INDEX idx_token_email (email)
 ) ENGINE=InnoDB;
+
+-- Tabla: verification_code 
+CREATE TABLE IF NOT EXISTS verification_code (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    email       VARCHAR(100) NOT NULL,
+    code        VARCHAR(6)   NOT NULL,
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at  DATETIME     NOT NULL,
+    used        BOOLEAN      NOT NULL DEFAULT FALSE,
+    CONSTRAINT fk_vc_user FOREIGN KEY (email) REFERENCES system_user(email) 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_vc_email (email),
+    INDEX idx_vc_code (code),
+    INDEX idx_vc_expires (expires_at)
+) ENGINE=InnoDB;
+

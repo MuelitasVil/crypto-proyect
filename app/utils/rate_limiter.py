@@ -1,33 +1,30 @@
 from fastapi import Request, HTTPException
 from collections import defaultdict
-from functools import wraps
 import time
 
-_requests = defaultdict(list)
+
+request_history = defaultdict(list)
 
 
-def rate_limit(requests_limit: int = 5, time_window: int = 60):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, request: Request, **kwargs):
-            client_ip = request.client.host
-            current_time = time.time()
+def rate_limit(max_requests: int = 5, window_seconds: int = 60):
+    def dependency(request: Request):
+        client_ip = request.client.host
+        now = time.time()
 
-            _requests[client_ip] = [
-                t for t in _requests[client_ip]
-                if current_time - t < time_window
-            ]
+        request_history[client_ip] = [
+            t for t in request_history[client_ip]
+            if now - t < window_seconds
+        ]
 
-            if len(_requests[client_ip]) >= requests_limit:
-                oldest = min(_requests[client_ip])
-                retry_after = int(time_window - (current_time - oldest))
-                raise HTTPException(
-                    status_code=429,
-                    detail=f"Too many requests. Try in {retry_after}s.",
-                    headers={"Retry-After": str(retry_after)}
-                )
+        if len(request_history[client_ip]) >= max_requests:
+            oldest = min(request_history[client_ip])
+            wait_time = int(window_seconds - (now - oldest))
+            raise HTTPException(
+                status_code=429,
+                detail=f"Too many requests. Try again in {wait_time}s.",
+                headers={"Retry-After": str(wait_time)}
+            )
 
-            _requests[client_ip].append(current_time)
-            return func(*args, request=request, **kwargs)
-        return wrapper
-    return decorator
+        request_history[client_ip].append(now)
+
+    return dependency

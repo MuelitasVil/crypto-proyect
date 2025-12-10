@@ -1,20 +1,27 @@
 import uuid
 import jwt
+import random
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 
 from app.domain.models.system_user import SystemUser
 from app.domain.models.jwt_token import Token
+from app.domain.models.verification_code import VerificationCode
 from app.repository.auth_repository import AuthRepository
+<<<<<<< HEAD
 from app.service.ldap.ldap import LdapAdministrator, User
 from app.utils.app_logger import AppLogger
 
 logger = AppLogger(__file__, "auth_service.log")
+=======
+from app.repository.verification_code_repository import VerificationCodeRepository
+>>>>>>> origin/dev
 
 SECRET_KEY = "YOUR_SECRET_KEY"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+CODE_EXPIRE_MINUTES = 10
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -24,16 +31,49 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthService:
     @staticmethod
+<<<<<<< HEAD
     def register(email: str, password: str, session: Session) -> SystemUser:
         logger.info(f"Starting registration for email: {email}")
         repo = AuthRepository(session)
         salt = uuid.uuid4().hex
         hashed = pwd_context.hash(password + salt)
         user = SystemUser(
+=======
+    def generate_code() -> str:
+        return str(random.randint(100000, 999999))
+
+    @staticmethod
+    def register(email: str, password: str, session: Session) -> dict:
+        auth_repo = AuthRepository(session)
+        code_repo = VerificationCodeRepository(session)
+
+        existing_user = auth_repo.get_user_by_email(email)
+
+        if existing_user:
+            if existing_user.state:
+                raise ValueError("User already exists")
+            code_repo.delete_expired(email)
+        else:
+            salt = uuid.uuid4().hex
+            hashed = pwd_context.hash(password + salt)
+            user = SystemUser(
+                email=email,
+                hashed_password=hashed,
+                salt=salt,
+                state=False
+            )
+            auth_repo.create_user(user)
+
+        code = AuthService.generate_code()
+        expires_at = datetime.utcnow() + timedelta(minutes=CODE_EXPIRE_MINUTES)
+
+        verification = VerificationCode(
+>>>>>>> origin/dev
             email=email,
-            hashed_password=hashed,
-            salt=salt
+            code=code,
+            expires_at=expires_at
         )
+<<<<<<< HEAD
         created_user = repo.create_user(user)
         logger.info(f"User created in database with email: {email}")
 
@@ -59,6 +99,32 @@ class AuthService:
             return None
 
         return user
+=======
+        code_repo.create(verification)
+
+        print(f"Verification code for {email}: {code}")
+
+        return {"email": email, "message": "Verification code sent"}
+
+    @staticmethod
+    def verify_code(email: str, code: str, session: Session) -> bool:
+        auth_repo = AuthRepository(session)
+        code_repo = VerificationCodeRepository(session)
+
+        verification = code_repo.get_valid_code(email, code)
+        if not verification:
+            return False
+
+        code_repo.mark_as_used(verification)
+
+        user = auth_repo.get_user_by_email(email)
+        if user:
+            user.state = True
+            session.commit()
+            return True
+
+        return False
+>>>>>>> origin/dev
 
     @staticmethod
     def login(
