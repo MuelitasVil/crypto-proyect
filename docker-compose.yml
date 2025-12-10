@@ -13,23 +13,23 @@ services:
     networks:
       - app-net
 
-  #python-app:
-  #  build:
-  #    context: .
-  #    dockerfile: Dockerfile-python
-  #    target: development
-  #  container_name: dned-backend
-  #  depends_on:
-  #    - mysql
-  #  env_file:
-  #    - .env
-  #  ports:
-  #    - "8000:8000"
-  #  networks:
-  #    - app-net
-  #  volumes:
-  #    - ./app:/app
-
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile-python
+      target: development
+    container_name: dned-backend
+    depends_on:
+      - mysql-dned
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    networks:
+      - app-net
+    volumes:
+      - ./app:/app
+      
 volumes:
   mysql-data:
 
