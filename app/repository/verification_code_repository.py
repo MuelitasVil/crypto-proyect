@@ -28,7 +28,7 @@ class VerificationCodeRepository:
             VerificationCode.email == email,
             VerificationCode.code == code,
             VerificationCode.used == False,  # noqa: E712
-            VerificationCode.expires_at > datetime.utcnow()
+            VerificationCode.expires_at < datetime.utcnow()
         ).first()
 
     def mark_as_used(self, verification_code: VerificationCode):

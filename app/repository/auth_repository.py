@@ -22,7 +22,7 @@ class AuthRepository:
         return self.session.get(SystemUser, email)
 
     def create_token(self, token: Token):
-        logger.info(f"Creating token for user_id: {token.user_id}")
+        logger.info(f"Creating token for user_id: {token.email}")
         self.session.add(token)
         self.session.commit()
 

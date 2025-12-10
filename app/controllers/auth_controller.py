@@ -41,9 +41,10 @@ def login(
     try:
         logger.info(f"Login attempt for email: {data.email}")
         token = AuthService.login(data.email, data.password, session)
+        logger.info(f"generate token: {token}")
         if not token:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         return {"access_token": token, "token_type": "bearer"}
     except Exception as e:
         logger.error(f"Error during login for email {data.email}: {e}")
-        raise HTTPException(status_code=500, detail="Login failed")
+        raise HTTPException(status_code=500, detail=str(e))
