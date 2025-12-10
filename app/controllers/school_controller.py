@@ -11,12 +11,15 @@ from app.service.use_cases.get_list_email_organization import (
     get_email_list_of_school
 )
 
+from app.utils.auth import get_current_user
+
 router = APIRouter(prefix="/schools", tags=["Schools"])
 
 
 @router.get("/", response_model=List[School])
 def list_schools(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 100
 ):
@@ -26,7 +29,8 @@ def list_schools(
 @router.get("/{cod_school}", response_model=School)
 def get_school(
     cod_school: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     school = SchoolService.get_by_id(cod_school, session)
     if not school:
@@ -38,6 +42,7 @@ def get_school(
 def define_get_school(
     cod_school: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     school = SchoolService.get_by_id(
@@ -60,6 +65,7 @@ def define_get_school(
 @router.post("/", response_model=School, status_code=status.HTTP_201_CREATED)
 def create_school(
     data: SchoolInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return SchoolService.create(data, session)
@@ -69,6 +75,7 @@ def create_school(
 def update_school(
     cod_school: str,
     data: SchoolInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     updated = SchoolService.update(cod_school, data, session)
@@ -80,6 +87,7 @@ def update_school(
 @router.delete("/{cod_school}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_school(
     cod_school: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = SchoolService.delete(cod_school, session)

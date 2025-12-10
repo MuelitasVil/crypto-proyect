@@ -11,12 +11,15 @@ from app.service.use_cases.get_list_email_organization import (
     get_email_list_of_headquarters
 )
 
+from app.utils.auth import get_current_user
+
 router = APIRouter(prefix="/headquarters", tags=["Headquarters"])
 
 
 @router.get("/", response_model=List[Headquarters])
 def list_headquarters(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 100
 ):
@@ -26,7 +29,8 @@ def list_headquarters(
 @router.get("/by_code/{cod_headquarters}", response_model=Headquarters)
 def get_headquarters(
     cod_headquarters: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
 ):
     hq = HeadquartersService.get_by_id(cod_headquarters, session)
     if not hq:
@@ -37,7 +41,8 @@ def get_headquarters(
 @router.get("/by_name/{name_headquarters}", response_model=List[Headquarters])
 def get_headquarters_by_name(
     name_headquarters: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
 ):
     hq = HeadquartersService.get_by_name(name_headquarters, session)
     if not hq:
@@ -49,7 +54,8 @@ def get_headquarters_by_name(
 def define_get_headquarters(
     cod_headquarters: str,
     cod_period: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     hq = HeadquartersService.get_by_id(
         cod_headquarters,
@@ -79,7 +85,8 @@ def define_get_headquarters(
 )
 def create_headquarters(
     data: HeadquartersInput,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     return HeadquartersService.create(data, session)
 
@@ -88,7 +95,8 @@ def create_headquarters(
 def update_headquarters(
     cod_headquarters: str,
     data: HeadquartersInput,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     updated = HeadquartersService.update(cod_headquarters, data, session)
     if not updated:
@@ -99,7 +107,8 @@ def update_headquarters(
 @router.delete("/{cod_headquarters}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_headquarters(
     cod_headquarters: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     deleted = HeadquartersService.delete(cod_headquarters, session)
     if not deleted:

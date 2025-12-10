@@ -11,6 +11,8 @@ from app.service.crud.email_sender_headquarters_service import (
     EmailSenderHeadquartersService
 )
 
+from app.utils.auth import get_current_user
+
 router = APIRouter(
     prefix="/email_sender_headquarters",
     tags=["Email Sender Headquarters"]
@@ -20,6 +22,7 @@ router = APIRouter(
 @router.get("/", response_model=List[EmailSenderHeadquarters])
 def list_associations(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 100
 ):
@@ -35,7 +38,8 @@ def list_associations(
 def get_association(
     sender_id: str,
     cod_headquarters: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
 ):
     assoc = EmailSenderHeadquartersService.get_by_id(
         sender_id, cod_headquarters, session
@@ -52,7 +56,8 @@ def get_association(
 )
 def create_association(
     data: EmailSenderHeadquartersInput,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     return EmailSenderHeadquartersService.create(data, session)
 
@@ -64,7 +69,8 @@ def create_association(
 def delete_association(
     sender_id: str,
     cod_headquarters: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     deleted = EmailSenderHeadquartersService.delete(
         sender_id, cod_headquarters, session

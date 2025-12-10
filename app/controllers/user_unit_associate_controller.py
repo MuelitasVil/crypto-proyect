@@ -10,6 +10,7 @@ from app.domain.dtos.user_unit_associate.user_unit_associate_input import (
 from app.service.crud.user_unit_associate_service import (
     UserUnitAssociateService,
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/user_unit_associates",
@@ -19,6 +20,7 @@ router = APIRouter(
 
 @router.get("/", response_model=List[UserUnitAssociate])
 def list_associations(
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session),
     start: int = 0,
     limit: int = 100
@@ -34,6 +36,7 @@ def get_association(
     email_unal: str,
     cod_unit: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     assoc = UserUnitAssociateService.get_by_id(
@@ -51,6 +54,7 @@ def get_association(
 def get_units_by_user(
     email_unal: str,
     cod_period: str = None,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UserUnitAssociateService.get_by_user(
@@ -66,6 +70,7 @@ def get_units_by_user(
 def get_users_by_unit(
     cod_unit: str,
     cod_period: str = None,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UserUnitAssociateService.get_by_unit(
@@ -80,6 +85,7 @@ def get_users_by_unit(
 )
 def create_association(
     data: UserUnitAssociateInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UserUnitAssociateService.create(data, session)
@@ -93,6 +99,7 @@ def delete_association(
     email_unal: str,
     cod_unit: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = UserUnitAssociateService.delete(

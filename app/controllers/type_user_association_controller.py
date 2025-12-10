@@ -11,6 +11,8 @@ from app.service.crud.type_user_association_service import (
     TypeUserAssociationService
 )
 
+from app.utils.auth import get_current_user
+
 router = APIRouter(
     prefix="/type_user_associations",
     tags=["Type User Association"]
@@ -20,6 +22,7 @@ router = APIRouter(
 @router.get("/", response_model=List[TypeUserAssociation])
 def list_associations(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 100
 ):
@@ -34,6 +37,7 @@ def get_association(
     email_unal: str,
     type_user_id: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     assoc = TypeUserAssociationService.get_by_id(
@@ -54,6 +58,7 @@ def get_association(
 )
 def create_association(
     data: TypeUserAssociationInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return TypeUserAssociationService.create(data, session)
@@ -67,6 +72,7 @@ def delete_association(
     email_unal: str,
     type_user_id: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = TypeUserAssociationService.delete(

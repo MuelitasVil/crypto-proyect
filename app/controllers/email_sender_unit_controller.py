@@ -9,12 +9,15 @@ from app.domain.dtos.email_sender_unit.email_sender_unit_input import (
 )
 from app.service.crud.email_sender_unit_service import EmailSenderUnitService
 
+from app.utils.auth import get_current_user
+
 router = APIRouter(prefix="/email_sender_units", tags=["Email Sender Unit"])
 
 
 @router.get("/", response_model=List[EmailSenderUnit])
 def list_associations(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 100
 ):
@@ -27,6 +30,7 @@ def list_associations(
 def get_association(
     sender_id: str,
     cod_unit: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     assoc = EmailSenderUnitService.get_by_id(
@@ -49,6 +53,7 @@ def get_association(
 )
 def create_association(
     data: EmailSenderUnitInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return EmailSenderUnitService.create(data, session)
@@ -61,6 +66,7 @@ def create_association(
 def delete_association(
     sender_id: str,
     cod_unit: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = EmailSenderUnitService.delete(sender_id, cod_unit, session)

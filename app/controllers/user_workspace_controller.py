@@ -8,12 +8,14 @@ from app.domain.models.user_workspace import UserWorkspace
 from app.domain.dtos.user_workspace.user_workspace_input import (
     UserWorkspaceInput,
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/user-workspaces", tags=["User Workspaces"])
 
 
 @router.get("/", response_model=List[UserWorkspace])
 def list_user_workspaces(
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session),
     start: int = 0,
     limit: int = 100
@@ -26,6 +28,7 @@ def list_user_workspaces(
 @router.get("/{workspace_id}", response_model=UserWorkspace)
 def get_user_workspace(
     workspace_id: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     workspace = UserWorkspaceService.get_by_id(workspace_id, session)
@@ -41,6 +44,7 @@ def get_user_workspace(
 )
 def create_user_workspace(
     data: UserWorkspaceInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UserWorkspaceService.create(data, session)
@@ -49,6 +53,7 @@ def create_user_workspace(
 @router.patch("/{workspace_id}", response_model=UserWorkspace)
 def update_user_workspace(
     workspace_id: str, data: UserWorkspaceInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     updated = UserWorkspaceService.update(workspace_id, data, session)
@@ -60,6 +65,7 @@ def update_user_workspace(
 @router.delete("/{workspace_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user_workspace(
     workspace_id: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = UserWorkspaceService.delete(workspace_id, session)

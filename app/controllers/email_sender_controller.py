@@ -9,6 +9,7 @@ from app.service.crud.email_sender_service import EmailSenderService
 from app.service.use_cases.fill_asociate_email_sender import (
     fill_associate_email_sender
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/email_senders", tags=["Email Senders"])
 
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/email_senders", tags=["Email Senders"])
 @router.get("/", response_model=List[EmailSender])
 def list_email_senders(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 20
 ):
@@ -25,6 +27,7 @@ def list_email_senders(
 @router.get("/{id}", response_model=EmailSender)
 def get_email_sender(
     id: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     sender = EmailSenderService.get_by_id(id, session)
@@ -40,6 +43,7 @@ def get_email_sender(
 )
 def create_email_sender(
     data: EmailSenderInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return EmailSenderService.create(data, session)
@@ -51,7 +55,8 @@ def create_email_sender(
 )
 def create_email_senders(
     session: Session = Depends(get_session),
-    cod_period: str = ""
+    cod_period: str = "",
+    user_email: str = Depends(get_current_user)
 ):
     return fill_associate_email_sender(session, cod_period)
 
@@ -60,7 +65,8 @@ def create_email_senders(
 def update_email_sender(
     id: str,
     data: EmailSenderInput,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user)
 ):
     updated = EmailSenderService.update(id, data, session)
     if not updated:
@@ -71,6 +77,7 @@ def update_email_sender(
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_email_sender(
     id: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = EmailSenderService.delete(id, session)

@@ -10,6 +10,7 @@ from app.domain.dtos.user_workspace_associate.user_workspace_associate_input imp
 from app.service.crud.user_workspace_associate_service import (
     UserWorkspaceAssociateService
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/associates", tags=["UserWorkspaceAssociate"])
 
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/associates", tags=["UserWorkspaceAssociate"])
 )
 def create_associate(
     data: UserWorkspaceAssociateInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     return UserWorkspaceAssociateService.create(data, session)
@@ -28,6 +30,7 @@ def create_associate(
 
 @router.get("/", response_model=List[UserWorkspaceAssociate])
 def list_associates(
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session),
     start: int = 0,
     limit: int = 100
@@ -40,6 +43,7 @@ def list_associates(
 @router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
 def delete_associate(
     data: UserWorkspaceAssociateInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = UserWorkspaceAssociateService.delete(

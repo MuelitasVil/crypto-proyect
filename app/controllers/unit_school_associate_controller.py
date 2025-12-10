@@ -10,6 +10,7 @@ from app.domain.dtos.unit_school_associate.unit_school_associate_input import (
 from app.service.crud.unit_school_associate_service import (
     UnitSchoolAssociateService,
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/unit_school_associates",
@@ -19,6 +20,7 @@ router = APIRouter(
 
 @router.get("/", response_model=List[UnitSchoolAssociate])
 def list_associations(
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session),
     start: int = 0,
     limit: int = 100
@@ -36,6 +38,7 @@ def get_association(
     cod_unit: str,
     cod_school: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     assoc = UnitSchoolAssociateService.get_by_id(
@@ -53,6 +56,7 @@ def get_association(
 def get_schools_by_unit(
     cod_unit: str,
     cod_period: str = None,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UnitSchoolAssociateService.get_by_unit(
@@ -67,6 +71,7 @@ def get_schools_by_unit(
 def get_units_by_school(
     cod_school: str,
     cod_period: str = None,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UnitSchoolAssociateService.get_by_school(
@@ -81,6 +86,7 @@ def get_units_by_school(
 )
 def create_association(
     data: UnitSchoolAssociateInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UnitSchoolAssociateService.create(data, session)
@@ -94,6 +100,7 @@ def delete_association(
     cod_unit: str,
     cod_school: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = UnitSchoolAssociateService.delete(

@@ -12,6 +12,8 @@ from app.service.crud.email_sender_school_service import (
     EmailSenderSchoolService,
 )
 
+from app.utils.auth import get_current_user
+
 router = APIRouter(
     prefix="/email_sender_schools",
     tags=["Email Sender School"]
@@ -21,6 +23,7 @@ router = APIRouter(
 @router.get("/", response_model=List[EmailSenderSchool])
 def list_associations(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 100
 ):
@@ -33,7 +36,8 @@ def list_associations(
 def get_association(
     sender_id: str,
     cod_school: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
 ):
     assoc = EmailSenderSchoolService.get_by_id(sender_id, cod_school, session)
     if not assoc:
@@ -48,7 +52,8 @@ def get_association(
 )
 def create_association(
     data: EmailSenderSchoolInput,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
 ):
     return EmailSenderSchoolService.create(data, session)
 
@@ -60,7 +65,8 @@ def create_association(
 def delete_association(
     sender_id: str,
     cod_school: str,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
 ):
     deleted = EmailSenderSchoolService.delete(sender_id, cod_school, session)
     if not deleted:

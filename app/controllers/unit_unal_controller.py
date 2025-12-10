@@ -9,12 +9,14 @@ from app.service.crud.unit_unal_service import UnitUnalService
 from app.service.use_cases.get_list_email_organization import (
     get_email_list_of_unit
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/units_unal", tags=["Units UNAL"])
 
 
 @router.get("/", response_model=List[UnitUnal])
 def list_units(
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session),
     start: int = 0,
     limit: int = 100
@@ -27,6 +29,7 @@ def list_units(
 @router.get("/{cod_unit}", response_model=UnitUnal)
 def get_unit(
     cod_unit: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     unit = UnitUnalService.get_by_id(
@@ -42,6 +45,7 @@ def get_unit(
 def define_get_unit(
     cod_unit: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     unit = UnitUnalService.get_by_id(
@@ -64,6 +68,7 @@ def define_get_unit(
 @router.post("/", response_model=UnitUnal, status_code=status.HTTP_201_CREATED)
 def create_unit(
     data: UnitUnalInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return UnitUnalService.create(data, session)
@@ -73,6 +78,7 @@ def create_unit(
 def update_unit(
     cod_unit: str,
     data: UnitUnalInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     updated = UnitUnalService.update(cod_unit, data, session)
@@ -84,6 +90,7 @@ def update_unit(
 @router.delete("/{cod_unit}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_unit(
     cod_unit: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = UnitUnalService.delete(cod_unit, session)

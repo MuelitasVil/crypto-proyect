@@ -12,6 +12,7 @@ from app.domain.dtos.school_headquarters_associate.school_headquarters_associate
 from app.service.crud.school_headquarters_associate_service import (
     SchoolHeadquartersAssociateService
 )
+from app.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/school_headquarters_associates",
@@ -22,6 +23,7 @@ router = APIRouter(
 @router.get("/", response_model=List[SchoolHeadquartersAssociate])
 def list_associations(
     session: Session = Depends(get_session),
+    user_email: str = Depends(get_current_user),
     start: int = 0,
     limit: int = 100
 ):
@@ -36,6 +38,7 @@ def get_association(
     cod_school: str,
     cod_headquarters: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     assoc = SchoolHeadquartersAssociateService.get_by_id(
@@ -56,6 +59,7 @@ def get_association(
 def get_headerquarters_by_school(
     cod_school: str,
     cod_period: str = None,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return SchoolHeadquartersAssociateService.get_by_school(
@@ -72,6 +76,7 @@ def get_headerquarters_by_school(
 def get_schools_by_headquarters(
     cod_headquarters: str,
     cod_period: str = None,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return SchoolHeadquartersAssociateService.get_by_headquarters(
@@ -88,6 +93,7 @@ def get_schools_by_headquarters(
 )
 def create_association(
     data: SchoolHeadquartersAssociateInput,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     return SchoolHeadquartersAssociateService.create(data, session)
@@ -101,6 +107,7 @@ def delete_association(
     cod_school: str,
     cod_headquarters: str,
     cod_period: str,
+    user_email: str = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     deleted = SchoolHeadquartersAssociateService.delete(
