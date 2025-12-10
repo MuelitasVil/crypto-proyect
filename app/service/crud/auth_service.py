@@ -8,6 +8,9 @@ from app.domain.models.system_user import SystemUser
 from app.domain.models.jwt_token import Token
 from app.repository.auth_repository import AuthRepository
 from app.service.ldap.ldap import LdapAdministrator, User
+from app.utils.app_logger import AppLogger
+
+logger = AppLogger(__file__, "auth_service.log")
 
 SECRET_KEY = "YOUR_SECRET_KEY"
 ALGORITHM = "HS256"
@@ -22,6 +25,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class AuthService:
     @staticmethod
     def register(email: str, password: str, session: Session) -> SystemUser:
+        logger.info(f"Starting registration for email: {email}")
         repo = AuthRepository(session)
         salt = uuid.uuid4().hex
         hashed = pwd_context.hash(password + salt)
@@ -31,6 +35,7 @@ class AuthService:
             salt=salt
         )
         created_user = repo.create_user(user)
+        logger.info(f"User created in database with email: {email}")
 
         ldap_admin = LdapAdministrator()
         ldap_user = User(
@@ -42,9 +47,14 @@ class AuthService:
         )
 
         ldap_response = ldap_admin.create_user(ldap_user)
-        print("ldap_response:")
-        print(ldap_response)
+        logger.info(
+            f"LDAP user creation response for email {email}: {ldap_response}"
+        )
         if not ldap_response['respuesta']:
+            logger.error(
+                f"LDAP user creation failed for email {email}"
+                f", rolling back database entry."
+            )
             repo.delete_user(created_user.email)
             return None
 
