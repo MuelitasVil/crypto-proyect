@@ -62,8 +62,9 @@ class AuthService:
 
         logger.info(f"Generating verification code for email: {email}")
         code = AuthService.generate_code()
-        expires_at = datetime.utcnow() + timedelta(minutes=CODE_EXPIRE_MINUTES)
-
+        expires_at = (
+            datetime.now(timezone.utc) + timedelta(minutes=CODE_EXPIRE_MINUTES)
+        )
         verification = VerificationCode(
             email=email,
             code=code,

@@ -22,10 +22,12 @@ class VerificationCodeRepository:
 
     def get_valid_code(self, email: str, code: str):
         logger.info(f"Fetching valid code for email: {email}")
+        logger.info(f"looking for code: {code}")
+        logger.info(f"Current time: {datetime.utcnow()}")
         return self.session.query(VerificationCode).filter(
             VerificationCode.email == email,
             VerificationCode.code == code,
-            not VerificationCode.used,
+            VerificationCode.used == False,
             VerificationCode.expires_at > datetime.utcnow()
         ).first()
 
