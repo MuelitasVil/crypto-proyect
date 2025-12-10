@@ -15,6 +15,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# cn=admin,dc=dned,dc=unal,dc=edu,dc=co
+# admin
 
 class AuthService:
     @staticmethod
