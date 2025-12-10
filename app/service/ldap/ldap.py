@@ -70,7 +70,7 @@ class LdapAdministrator:
             }
 
         new_user_dn = (
-            f'cn={user.username},cn=,dc=dned,dc=unal,dc=edu,dc=co'
+            f'cn={user.username},cn=users,dc=dned,dc=unal,dc=edu,dc=co'
         )
 
         if self.check_user_existence(user.username, conn):

@@ -21,7 +21,7 @@ def register(data: RegisterInput, session: Session = Depends(get_session)):
         return {"message": "User registered", "user": user}
     except Exception as e:
         logger.error(f"Error registering user with email {data.email}: {e}")
-        raise HTTPException(status_code=500, detail="Registration failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/verify")
@@ -37,7 +37,7 @@ def login(
     data: LoginInput,
     session: Session = Depends(get_session),
     _: None = Depends(rate_limit(max_requests=5, window_seconds=60))
-):  
+):
     try:
         logger.info(f"Login attempt for email: {data.email}")
         token = AuthService.login(data.email, data.password, session)

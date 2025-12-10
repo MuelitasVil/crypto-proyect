@@ -27,7 +27,7 @@ class VerificationCodeRepository:
         return self.session.query(VerificationCode).filter(
             VerificationCode.email == email,
             VerificationCode.code == code,
-            VerificationCode.used == False,
+            VerificationCode.used == False,  # noqa: E712
             VerificationCode.expires_at > datetime.utcnow()
         ).first()
 

@@ -12,7 +12,7 @@ from app.repository.auth_repository import AuthRepository
 from app.repository.verification_code_repository import (
     VerificationCodeRepository
 )
-from app.service.ldap.ldap import LdapAdministrator
+from app.service.ldap.ldap import LdapAdministrator, User
 from app.utils.app_logger import AppLogger
 
 logger = AppLogger(__file__, "auth_service.log")
@@ -60,8 +60,33 @@ class AuthService:
             )
             auth_repo.create_user(user)
 
+            logger.info(f"User created in database with email: {email}")
+
+            ldap_admin = LdapAdministrator()
+            ldap_user = User(
+                username=email,
+                password=password,
+                name="Nombre",
+                lastname="Apellido",
+                email=email
+            )
+
+            ldap_response = ldap_admin.create_user(ldap_user)
+            logger.info(
+                f"LDAP user creation response for email"
+                f" {email}: {ldap_response}"
+            )
+            if not ldap_response['respuesta']:
+                logger.error(
+                    f"LDAP user creation failed for email {email}"
+                    f", rolling back database entry."
+                )
+                auth_repo.delete_user(user.email)
+                raise ValueError("LDAP user creation failed")
+
         logger.info(f"Generating verification code for email: {email}")
         code = AuthService.generate_code()
+        logger.info(f"Verification code generated: {code}")
         expires_at = (
             datetime.now(timezone.utc) + timedelta(minutes=CODE_EXPIRE_MINUTES)
         )
@@ -109,6 +134,7 @@ class AuthService:
             ldap_admin = LdapAdministrator()
             ldap_response = ldap_admin.check_user_credentials(email, password)
             if not ldap_response['respuesta']:
+                logger.error("LDAP authentication failed")
                 return None
 
         logger.info(f"Using database for authentication of email: {email}")
